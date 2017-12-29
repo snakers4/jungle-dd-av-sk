@@ -82,6 +82,23 @@ If you are not familiar with Docker, consider following / reading these material
 - [Docker](https://towardsdatascience.com/how-docker-can-help-you-become-a-more-effective-data-scientist-7fc048ef91d5) for data science;
 - A series of posts on our channel with useful links [1](https://t.me/snakers4/1476) [2](https://t.me/snakers4/1479) (if you do not speak Russian - just follow links - they ultimately link to Enlish articles mostly);
 
+**Warning**
+On some machines jupyter extenstions give me hell during installation, or they just do no work.
+Alternative ways of intallation
+
+```
+# A NOTE ON ENABLING JPN EXTENSIONS
+# sometimes pip install does not work on some systems
+# installation from source solves the problem
+git clone https://github.com/ipython-contrib/jupyter_contrib_nbextensions.git
+pip install -e jupyter_contrib_nbextensions
+jupyter contrib nbextension install --system
+
+# or install via pip from repository
+pip install git+https://github.com/ipython-contrib/jupyter_contrib_nbextensions
+jupyter contrib nbextension install --system
+```
+
 
 Running the environment
 ------------
@@ -162,6 +179,14 @@ Training the final model
 Supplementary materials 
 ------------
 Provided just fyi, use at your own risk.
+
+---
+
+Notebooks are best opened with the following [extensions](https://github.com/ipython-contrib/jupyter_contrib_nbextensions) enabled:
+![extentions](notebooks/extensions.png)
+
+---
+
 
 Notebooks:
 - jungle.ipynb - data expoloration + various pipelines and experiments
