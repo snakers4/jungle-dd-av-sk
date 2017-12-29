@@ -1,4 +1,5 @@
 import sys
+import torch
 
 REQUIRED_PYTHON = "python3"
 
@@ -18,8 +19,14 @@ def main():
             "This project requires Python {}. Found: Python {}".format(
                 required_major, sys.version))
     else:
-        print(">>> Development environment passes all tests!")
+        gpu_count = torch.cuda.device_count()
+        if gpu_count==0:
+            raise TypeError("Please add more GPUs to your system. Pytroch found: {} GPUs".format(gpu_count))
+        else:
+            print ("GPUs detected: {}".format(gpu_count))
+            print(">>> Development environment passes all tests!")
 
+torch.cuda.device_count()        
 
 if __name__ == '__main__':
     main()
