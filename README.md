@@ -1,4 +1,4 @@
-Jungle video trap challenge solution by AVeysov and Skolbachev
+Jungle video trap challenge solution by AVeysov and SKolbachev
 ==============================
 
 - Classifying animals using jungle trap videos (200k+, 1TB) with 90%+ accuracy with CNNs;
@@ -57,7 +57,23 @@ Download and unpack the following datasets to their respective folders from [her
 - data/raw - the full 1TB dataset
 - data/micro - micro dataset
 
-Download the annotation files using the below commands:
+Download the annotation files and micro dataset using the below python3 script:
+
+```
+import collections
+
+file_dict = collections.OrderedDict()
+file_dict['data/submission.csv'] = 'https://s3.amazonaws.com/drivendata/data/49/public/submission_format.csv'
+file_dict['data/train.csv'] = 'https://s3.amazonaws.com/drivendata/data/49/public/train_labels.csv'
+file_dict['data/micro/micro_chimps.tgz'] = 'https://s3.amazonaws.com/drivendata-public-assets/micro_chimps.tgz'
+
+for file,url in file_dict.items():
+    url_q = "'" + url + "'"
+    ! wget --continue --no-check-certificate --no-proxy -O $file $url_q
+
+```
+
+For the full dataset you will have to be more creative, I recommend using 
 
 Setting up the environment
 ------------
