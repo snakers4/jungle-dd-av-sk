@@ -26,27 +26,11 @@ Project Organization
     │
     ├── notebooks           <- Jupyter notebooks (provided just fyi for completeness)
     │
-    ├── reports             <- Generated analysis as HTML, PDF, LaTeX, etc.
-    │   └── figures         <- Generated graphics and figures to be used in reporting
-    │
     ├── Dockerfile          <- The Dockerfile to build the environment
     │
     ├── src                 <- Source code for use in this project.
-    │   ├── __init__.py     <- Makes src a Python module
-    │   │
-    │   ├── data            <- Scripts to download or generate data
-    │   │   └── make_dataset.py
-    │   │
-    │   ├── features        <- Scripts to turn raw data into features for modeling
-    │   │   └── build_features.py
-    │   │
-    │   ├── models          <- Scripts to train models and then use trained models to make
-    │   │   │                 predictions
-    │   │   ├── predict_model.py
-    │   │   └── train_model.py
-    │   │
-    │   └── visualization   <- Scripts to create exploratory and results oriented visualizations
-    │       └── visualize.py
+    │   ├── extract_features    <- Extracts CNN features
+    │   └── extract_meta_data   <- Extracts video meta-data
     │
     └── test_environment.py <- A set of small scripts to test the environment
 
@@ -57,7 +41,7 @@ Download and unpack the following datasets to their respective folders from [her
 - data/raw - the full 1TB dataset
 - data/micro - micro dataset
 
-Download the annotation files and micro dataset using the below python3 script:
+Download the annotation files and micro dataset using the below jupyter notebook snippet:
 
 ```
 import collections
@@ -73,20 +57,26 @@ for file,url in file_dict.items():
 
 ```
 
-For the full dataset you will have to be more creative, I recommend using 
+For the full dataset you will have to be more creative, I recommend using [this](https://help.ubuntu.com/community/TransmissionHowTo).
 
 Setting up the environment
 ------------
 
-Key prerequisites:
+Key dependencies:
 - Ubuntu 16.04;
 - CUDA + CUDNN + Nvidia GPU;
 - Docker and nvidia-docker;
+- This pre-trained model [zoo](https://github.com/Cadene/pretrained-models.pytorch);
 
 Make sure that you are familiar with Docker and building docker images from Dockerfiles and [nvidia-docker](https://github.com/NVIDIA/nvidia-docker).
 
 Use the provided Dockerfile to build an environment.
 Change the **ENTER_YOUR_PASS_HERE** placeholder to the desired root password (is necessary if you want to ssh remotely into the container).
+
+The following libraries may have to be installed manually by logging into the container:
+- ```pip3 install moviepy```
+- ```pip3 install git+https://github.com/aleju/imgaug```
+- ```pip3 install sk-video```
 
 If you are not familiar with Docker, consider following / reading these materials:
 - [Docker](https://towardsdatascience.com/how-docker-can-help-you-become-a-more-effective-data-scientist-7fc048ef91d5) for data science;
@@ -111,16 +101,69 @@ nvidia-docker run -it -v /PATH/TO/YOUR/FOLDER:/home/keras/notebook -p 8888:8888 
 For nvidia-docker 2 use:
 
 ```
-docker run --runtime=nvidia -e NVIDIA_VISIBLE_DEVICES=all -it -v /home/av:/home/keras/notebook -p 8888:8888  -p 6006:6006 --shm-size 8G av_image    
+docker run --runtime=nvidia -e NVIDIA_VISIBLE_DEVICES=all -it -v /PATH/TO/YOUR/FOLDER:/home/keras/notebook -p 8888:8888 -p 6006:6006 --shm-size 8G av_image    
 ```
+
+Note that without ```--shm-size``` Pytorch data loaders will not work.
 
 Testing the environment
 ------------
 
 1. Run test_environment.py - and make sure it works;
 2. The only key major change that occured recently is Pytorch 0.3 being released, but this should not cause any issues - but be cautious;
-3. Not all keras + tf versions are friednly with each other;
+3. Not all keras + tf versions are friednly with each other - run at least one test from [here](https://github.com/nerox8664/pytorch2keras) to make sure error is low;
 
 
-Extracting features
+Extracting features and meta-data
 ------------
+
+You may consider fine-tuning the encoders (which performed strangely on validation for us - and therefore we failed to utilize them fully, though Dmytro did despite their validation performance) or building and end2end pipeline (which we also did), but the easiest and fastest way is to 
+- extract features
+- use them as inputs to meta-model
+
+Run the following scripts sequentially. Note that on 2 Nvidia 1080 Ti GPUs each feature set (train+test) took ~ 1 day to unpack.
+
+- Extract meta-data
+```
+python3 src/extract_meta_data/extract_meta_data.py
+```
+- Create folders
+```
+mkdir -p ../../data/interim/inception4_test
+mkdir -p ../../data/interim/inception4_train
+
+mkdir -p ../../data/interim/ir_test
+mkdir -p ../../data/interim/ir_train
+
+mkdir -p ../../data/interim/nasnet_test
+mkdir -p ../../data/interim/nasnet_train
+
+mkdir -p ../../data/interim/resnet_test
+mkdir -p ../../data/interim/resnet_train
+
+```
+- Extract features via running these python scripts
+```
+python3 src/extract_features/inception4_extract_test.py
+python3 src/extract_features/inception4_extract_train.py
+python3 src/extract_features/inception_resnet_extract_test.py
+python3 src/extract_features/inception_resnet_extract_train.py
+python3 src/extract_features/nasnet_extract_test.py
+python3 src/extract_features/nasnet_extract_train.py
+python3 src/extract_features/resnet_extract_test.py
+python3 src/extract_features/resnet_extract_train.py
+```
+
+
+Training the final model 
+------------
+[SK to fill]
+
+Supplementary materials 
+------------
+Provided just fyi, use at your own risk.
+
+Notebooks:
+- jungle.ipynb - data expoloration + various pipelines and experiments
+- playing_with_extractors.ipynb - playing with Pytorch feature extractors
+- video_loading_benchmark.ipynb - playing with several video processing libraries
