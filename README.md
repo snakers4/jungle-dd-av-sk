@@ -101,7 +101,7 @@ nvidia-docker run -it -v /PATH/TO/YOUR/FOLDER:/home/keras/notebook -p 8888:8888 
 For nvidia-docker 2 use:
 
 ```
-docker run --runtime=nvidia -e NVIDIA_VISIBLE_DEVICES=all -it -v /PATH/TO/YOUR/FOLDER:/home/keras/notebook -p 8888:8888 -p 6006:6006 --shm-size 8G av_image    
+docker run --runtime=nvidia -e NVIDIA_VISIBLE_DEVICES=all -it -v /PATH/TO/YOUR/FOLDER:/home/keras/notebook -p 8888:8888 -p 6006:6006 --shm-size 8G YOUR_DOCKER_IMAGE_NAME    
 ```
 
 Note that without ```--shm-size``` Pytorch data loaders will not work.
