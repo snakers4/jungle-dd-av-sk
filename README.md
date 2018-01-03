@@ -134,7 +134,7 @@ Testing the environment
 Extracting features and meta-data
 ------------
 
-You may consider fine-tuning the encoders (which performed strangely on validation for us - and therefore we failed to utilize them fully, though Dmytro did despite their validation performance) or building and end2end pipeline (which we also did), but the easiest and fastest way is to 
+You may consider fine-tuning the encoders (which performed strangely on validation for us - and therefore we failed to utilize them fully) or building end2end pipeline (which we also did), but the easiest and fastest way is to 
 - extract features
 - use them as inputs to meta-model
 
