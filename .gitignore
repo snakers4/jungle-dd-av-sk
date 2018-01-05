@@ -2,7 +2,10 @@
 data/features/
 data/micro/
 data/raw/
-models/
+models/*.h5
+models/blend/*.h5
+models/predictions/*.npy
+models/predictions/*.csv
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
