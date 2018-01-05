@@ -77,7 +77,7 @@ def main():
     test_folders = [args.resnet152_test_folder, args.inception_resnet_test_folder, args.inception4_test_folder]
     shapes = [(45, 3840), (45, 3488), (45, 2944)]
     
-    train_kfold_models(getConcatModel, args.model_name, [args.folder], [args.test_folder], [tuple(args.shapes)], 
+    train_kfold_models(getConcatModel, args.model_name, folders, test_folders, shapes, 
                        args.init_fold, args.num_folds, args.epochs, args.ps_epochs, 
                        args.batch_size, args.ps_batch_size, args.ps_test_batch_size,
                        True if args.blank_only==1 else False)

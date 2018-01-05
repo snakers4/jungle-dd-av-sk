@@ -38,7 +38,7 @@ def train_kfold_models(get_model_fun, model_name, folders, test_folders, shapes,
         np.random.shuffle(test_ps_inx)
         test_ps_samples = test_ps_inx[:num_ps_test_samples]
 
-        test_ps_seq = FeatureSequence(test_folder, test_video_names[test_ps_samples], shapes,
+        test_ps_seq = FeatureSequence(test_folders, test_video_names[test_ps_samples], shapes,
                                       test_X_meta[test_ps_samples], np.zeros((num_ps_test_samples, 1)), 
                                       batch_size, shuffle=False, parallel=False)
 
@@ -103,3 +103,49 @@ def train_kfold_models(get_model_fun, model_name, folders, test_folders, shapes,
     losses = compute_losses(Y, pred, eps=1e-5)
     print("full loss: {}".format(sum(losses)/len(losses)))
     print()
+    
+def predict_kfold_models(model_name, folders, test_folders, shapes, num_folds,
+                         batch_size, blank_only=False, seed=seed):
+    video_names, X_meta, Y, test_video_names, test_X_meta, inx2label, label2inx = load_data()
+    
+    if (blank_only):
+        Y = np.expand_dims(Y[:,1], 1)
+    
+    trn_folds, val_folds = stratified_kfold_sampling(Y, num_folds, seed)
+    
+    pred = np.zeros((video_names.shape[0], Y.shape[1]))
+    test_pred = np.zeros((num_folds, test_video_names.shape[0], Y.shape[1]))
+    
+    test_seq = FeatureSequence(test_folders, test_video_names, shapes,
+                               test_X_meta, np.zeros((test_video_names.shape[0], 1)), 
+                               batch_size, shuffle=False, parallel=False)
+    
+    
+    for f_inx in range(0, num_folds):
+        print("Predicting fold {}".format(f_inx))
+        
+        model_file_name = model_name+"f"+str(f_inx)
+        model_file = models_dir+model_file_name+'.h5'
+        model = load_model(model_file, compile=True, 
+                           custom_objects={'Attention':Attention,'AttentionWeightedAverage':AttentionWeightedAverage})
+        
+        val_seq = FeatureSequence(folders, video_names[val_folds[f_inx]], shapes,
+                                  X_meta[val_folds[f_inx]], Y[val_folds[f_inx]], 
+                                  batch_size, shuffle=False, parallel=False)
+        
+        pred[val_folds[f_inx]] = model.predict_generator(val_seq, len(val_seq), verbose=1, use_multiprocessing=False, 
+                                                         workers=cpu_cores, max_queue_size=cpu_cores+2)
+        test_pred[f_inx] = model.predict_generator(test_seq, len(test_seq), verbose=1, use_multiprocessing=False, 
+                                                   workers=cpu_cores, max_queue_size=cpu_cores+2)
+
+        losses = compute_losses(Y[val_folds[f_inx]], pred[val_folds[f_inx]], eps=1e-5)
+        print("fold: {}, loss: {}".format(f_inx, sum(losses)/len(losses)))
+        print()
+
+    np.save(results_dir+model_name+'_pred.npy', pred)
+    np.save(results_dir+model_name+'_test_pred.npy', test_pred)
+
+    losses = compute_losses(Y, pred, eps=1e-5)
+    print("full loss: {}".format(sum(losses)/len(losses)))
+    print()
+    

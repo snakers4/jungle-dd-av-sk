@@ -41,7 +41,7 @@ K.set_session(K.tf.Session(config=cfg))
 
 data_dir = '../../data/'
 models_dir = '../../models/'
-results_dir = models_dir
+results_dir = models_dir+'predictions/'
 blend_dir = models_dir+'blend/'
 
 # Seed
@@ -57,7 +57,7 @@ def load_data():
     inx2label = [col for col in df.columns]
     label2inx = {col: i for i, col in enumerate(inx2label)}
 
-    test_df = pd.read_csv(results_dir + 'submission_format.csv', index_col='filename')
+    test_df = pd.read_csv(data_dir + 'submission_format.csv', index_col='filename')
     test_video_names = np.array(test_df.index)
 
     # Load meta_data
@@ -98,7 +98,7 @@ def load_npy(folder, name, shape):
         else:
             return arr
     except:
-        print(name)
+        print("Cannot read {}{}".format(folder, name))
         return np.zeros(shape)
 
 class FeatureSequence(Sequence):

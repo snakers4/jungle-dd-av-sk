@@ -4,6 +4,7 @@ from local_utils import *
 def getSimpleNNModel(input_shape, output_shape):
     x_input = Input(shape=input_shape)
     x_feat = BatchNormalization()(x_input)
+    x_feat = Dropout(0.15)(x_feat) # Providing higher dropout should increase score 
 
     x_feat = Dense(512)(x_feat)
     x_feat = BatchNormalization()(x_feat)
@@ -70,12 +71,13 @@ def stack_models():
         concat3_skip_f5_test_pred.mean(0), 
         concat3_blank_skip_f5_test_pred.mean(0)], -1)
     
-    trn_folds, val_folds = stratified_kfold_sampling(Y, args.num_folds, seed)
+    trn_folds, val_folds = stratified_kfold_sampling(Y, 10, seed)
 
     blend_pred = np.zeros((pred.shape[0], Y.shape[1]))
     blend_pred_test = np.zeros((len(trn_folds), pred_test.shape[0], Y.shape[1]))
 
     for f_inx in range(0, len(trn_folds)):
+        print("Training fold {}".format(f_inx))
         blend_model = getSimpleNNModel((pred.shape[1],), Y.shape[1])
 
         model_name = "blend__dense512x2__10f__concat3__concat3_blank__3skip__3skip1__nasnet"
@@ -136,3 +138,9 @@ def stack_models():
     submission_df.index.name = 'filename'
     submission_file_name = 'blend__dense512x2__10f__concat3__concat3_blank__3skip__3skip1__nasnet__submission.csv'
     submission_df.to_csv(results_dir+submission_file_name, index=True)
+    
+def main():
+    stack_models()
+            
+if __name__ == '__main__':
+    main()  
