@@ -23,6 +23,8 @@ Project Organization
     │   └── raw             <- The original unpacked 1TB raw full size video dataset
     │
     ├── models              <- Trained and serialized models, model predictions, or model summaries
+    │   ├── blend           <- Trained stacking models
+    │   └── predictions     <- Models predictions in *.npy and *.csv formats
     │
     ├── notebooks           <- Jupyter notebooks (provided just fyi for completeness)
     │
@@ -30,7 +32,8 @@ Project Organization
     │
     ├── src                 <- Source code for use in this project.
     │   ├── extract_features    <- Extracts CNN features
-    │   └── extract_meta_data   <- Extracts video meta-data
+    │   ├── extract_meta_data   <- Extracts video meta-data
+    │   └── train_models        <- Scripts for training models
     │
     └── test_environment.py <- A set of small scripts to test the environment
 
@@ -73,10 +76,11 @@ Make sure that you are familiar with Docker and building docker images from Dock
 Use the provided Dockerfile to build an environment.
 Change the **ENTER_YOUR_PASS_HERE** placeholder to the desired root password (is necessary if you want to ssh remotely into the container).
 
-The following libraries may have to be installed manually by logging into the container:
+The following libraries should be installed manually by logging into the container:
 - ```pip3 install moviepy```
 - ```pip3 install git+https://github.com/aleju/imgaug```
 - ```pip3 install sk-video```
+- ```pip3 install joblib```
 
 If you are not familiar with Docker, consider following / reading these materials:
 - [Docker](https://towardsdatascience.com/how-docker-can-help-you-become-a-more-effective-data-scientist-7fc048ef91d5) for data science;
@@ -143,6 +147,7 @@ Run the following scripts sequentially. Note that on 2 Nvidia 1080 Ti GPUs each 
 - Extract meta-data
 ```
 python3 src/extract_meta_data/extract_meta_data.py
+python3 src/extract_meta_data/extract_64x64_meta_data.py
 ```
 - Create folders
 ```
@@ -174,7 +179,40 @@ python3 src/extract_features/resnet_extract_train.py
 
 Training the final model 
 ------------
-[SK to fill]
+We trained 9 models, each on 5 stratified folds, using extracted features: 
+- 3 RNN models with `AttentionWeightedAverage` and `Max-Min` polling layers based on resnet152, inception-resnet and inception4.
+    * NOTE: `Attention` layer from `src/train_models/local_utils.py` could be used instead of `AttentionWeightedAverage` and might provide better score.
+```
+python3 train_models.py --model_name resnet152_skip_CuDNNGRU512x2_dense1024_dense1024_bs64 --shape 45 3840 --folder $PATH_TO_FEAT --test_folder $PATH_TO_TEST_FEAT -rnn 1 -e 15 -pe 5 -bs 64 -ps_bs 44 -ps_tbs 20
+python3 train_models.py --model_name inception4_skip_CuDNNGRU512x2_dense1024_dense1024_bs64 --shape 45 2944 --folder $PATH_TO_FEAT --test_folder $PATH_TO_TEST_FEAT -rnn 1 -e 15 -pe 5 -bs 64 -ps_bs 44 -ps_tbs 20
+python3 train_models.py --model_name inception_resnet_skip_CuDNNGRU512x2_dense1024_dense1024_bs64 --shape 45 3488 --folder $PATH_TO_FEAT --test_folder $PATH_TO_TEST_FEAT -rnn 1 -e 15 -pe 5 -bs 64 -ps_bs 44 -ps_tbs 20
+```
+
+- 4 models with `Attention` and `Max-Min` pooling layers based on resnet152, inception-resnet, inception4 and nasnet.
+```
+python3 train_models.py --model_name resnet152_skip_dense1024x2_bs64 --shape 45 3840 --folder $PATH_TO_FEAT --test_folder $PATH_TO_TEST_FEAT -e 15 -pe 5 -bs 64 -ps_bs 44 -ps_tbs 20
+python3 train_models.py --model_name inception4_skip_dense1024x2_bs64 --shape 45 2944 --folder $PATH_TO_FEAT --test_folder $PATH_TO_TEST_FEAT -e 15 -pe 5 -bs 64 -ps_bs 44 -ps_tbs 20
+python3 train_models.py --model_name inception_resnet_skip_dense1024x2_bs64 --shape 45 3488 --folder $PATH_TO_FEAT --test_folder $PATH_TO_TEST_FEAT -e 15 -pe 5 -bs 64 -ps_bs 44 -ps_tbs 20
+python3 train_models.py --model_name nasnet_skip_dense1024x2_bs48 --shape 30 8064 --folder $PATH_TO_FEAT --test_folder $PATH_TO_TEST_FEAT -e 15 -pe 5 -bs 48 -ps_bs 36 -ps_tbs 12
+```
+
+- 1 *concat* model with `Attention` and `Max-Min` pooling layers based on *concatenation* of resnet152, inception-resnet, inception4.
+    * NOTE: It's reasonable to add more pre-trained features to the model including nasnet. We just didn't have time to do it.
+```
+python3 train_concat_models.py --model_name concat3_skip_dense1024x2_bs48 --resnet152_folder $PATH_TO_RESNET152 --resnet152_test_folder $PATH_TO_RESNET152_TEST --inception_resnet_folder $PATH_TO_IR --inception_resnet_test_folder $PATH_TO_IR_TEST --inception4_folder $PATH_TO_INCEPTION4 --inception4_test_folder $PATH_TO_INCEPTION4_TEST -e 15 -pe 5 -bs 48 -ps_bs 32 -ps_tbs 16
+```
+
+- 1 *concat blank* model with `Attention` and `Max-Min` pooling layers based on *concatenation* of resnet152, inception-resnet, inception4. We got a slightly better score for blan/not blank predictions by training separate model.
+```
+python3 train_concat_models.py --model_name concat3_blank_skip_dense1024x2_bs48 --resnet152_folder $PATH_TO_RESNET152 --resnet152_test_folder $PATH_TO_RESNET152_TEST --inception_resnet_folder $PATH_TO_IR --inception_resnet_test_folder $PATH_TO_IR_TEST --inception4_folder $PATH_TO_INCEPTION4 --inception4_test_folder $PATH_TO_INCEPTION4_TEST -blank 1 -e 15 -pe 5 -bs 48 -ps_bs 32 -ps_tbs 16
+```
+
+We found that 15 training epochs + 5 pseudo-labeling training epochs should be enough to get pretty decent score (you may consider to use more epochs though, especially for big models like *nasnet* and *concat*). We chose batch size 64 (44/20)for single-features models and 48 (32/16) for *nasnet* and *concat* models. Generally, bigger batch size was better. The choise depended on disk I/O and training speed. But you may try to use 128+.
+    
+Predictions from the models above were stacked together via NN meta-model using 10 stratified folds to get the final score. NOTE: Model names and prediction file names are hardcoded in the `stacking.py` script.
+```
+python3 stacking.py
+```
 
 Supplementary materials 
 ------------
