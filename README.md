@@ -219,7 +219,7 @@ cd src/train_models/
 python3 train_concat_models.py --model_name concat3_blank_skip_dense1024x2_bs48 --resnet152_folder $PATH_TO_RESNET152 --resnet152_test_folder $PATH_TO_RESNET152_TEST --inception_resnet_folder $PATH_TO_IR --inception_resnet_test_folder $PATH_TO_IR_TEST --inception4_folder $PATH_TO_INCEPTION4 --inception4_test_folder $PATH_TO_INCEPTION4_TEST -blank 1 -e 15 -pe 5 -bs 48 -ps_bs 32 -ps_tbs 16
 ```
 
-We found that 15 training epochs + 5 pseudo-labeling training epochs should be enough to get pretty decent score (you may consider to use more epochs though, especially for big models like *nasnet* and *concat*). We chose batch size 64 (44/20)for single-features models and 48 (32/16) for *nasnet* and *concat* models. Generally, bigger batch size was better. The choise depended on disk I/O and training speed. But you may try to use 128+.
+We found that 15 training epochs + 5 pseudo-labelling training epochs should be enough to get pretty decent score (you may consider to use more epochs though, especially for big models like *nasnet* and *concat*). We chose batch size 64 (44/20)for single-features models and 48 (32/16) for *nasnet* and *concat* models. Generally, bigger batch size was better. The choice depended on disk I/O and training speed. But you may try to use 128+.
     
 Predictions from the models above were stacked together via NN meta-model using 10 stratified folds to get the final score. NOTE: Model names and prediction file names are hardcoded in the `stacking.py` script.
 ```
