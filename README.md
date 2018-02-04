@@ -1,6 +1,6 @@
 Jungle video trap challenge solution by AVeysov and SKolbachev
 ==============================
-
+- Blog posts explaining the solution part [one](spark-in.me/post/jungle-animal-trap-competition-part-one), part [two](spark-in.me/post/jungle-animal-trap-competition-part-two);
 - Classifying animals using jungle trap videos (200k+, 1TB) with 90%+ accuracy with CNNs;
 - Also visit out [blog](https://spark-in.me/tag/group-data-science) and [channel](https://t.me/snakers4) (seriously!);
 
